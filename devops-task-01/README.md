@@ -27,5 +27,5 @@ rename files 
  
 delete dir 
 << Then i should bring all of these into screenshots and add these screenshots to its dir
-and after finishing i will add them to my github acc using git bash 
-هللا يلع انلكوت هللا مسب
+and after finishing i will add them to my github acc 
+بسم الله توكلنا علي الله
