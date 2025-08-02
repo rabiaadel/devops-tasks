@@ -84,6 +84,11 @@ Visited `http://localhost:85` and `http://localhost:89` in a browser to ensure b
 ![Working 89](screenshots/working89.png)
 
 ---
+###  Creating A Script That Summarizes This Task
+
+
+**Screenshot:**
+![Script Result](screenshots/script.png)
 
 ## What I Learned
 
