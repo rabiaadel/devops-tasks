@@ -90,6 +90,17 @@ Visited `http://localhost:85` and `http://localhost:89` in a browser to ensure b
 **Screenshot:**
 ![Script Result](screenshots/script.png)
 
+###  thats the final adjustment after i added the php configuration files
+
+
+**Screenshot:**
+![Script Result](screenshots/workingphpfbm.png)
+###  thats the conf file of the port 85 after i changed it
+
+
+**Screenshot:**
+![Script Result](screenshots/conffile.png)
+
 ## What I Learned
 
 - How to write clean Nginx server blocks 
