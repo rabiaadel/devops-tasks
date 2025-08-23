@@ -88,7 +88,7 @@ version: "3.8"
 
 services:
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.bepr
     container_name: my_app
@@ -102,10 +102,10 @@ services:
     depends_on:
       - db
     networks:
-      - frontend   # app <-> user/browser
-      - backend    # app <-> db
+      - frontend # app <-> user/browser
+      - backend # app <-> db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -122,9 +122,9 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - backend
+      - backend # db should only see the app
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -132,9 +132,13 @@ services:
 volumes:
   db_data:
 
+
 networks:
   frontend:
   backend:
+
+
+
 ```
 
 **Explanation:**
@@ -158,19 +162,27 @@ version: "3.8"
 
 services:
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.bepr
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+      restart_policy:
+        condition: on-failure
     environment:
       - DATABASE_HOST=db
       - DATABASE_USER=${MYSQL_USER}
       - DATABASE_PASSWORD=${MYSQL_PASSWORD}
       - DATABASE_NAME=${MYSQL_DATABASE}
     networks:
-      - frontend
-      - backend
+      - frontend # so load_balancer can reach it
+      - backend # so it can reach db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -184,9 +196,9 @@ services:
     depends_on:
       - app
     networks:
-      - frontend
+      - frontend # only talks to app, not db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
+      test: [ "CMD", "curl", "-f", "http://localhost/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -204,7 +216,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -212,9 +224,11 @@ services:
 volumes:
   db_data:
 
+
 networks:
   frontend:
   backend:
+
 ```
 
 **Explanation:**
@@ -257,8 +271,9 @@ docker-compose -f docker-compose.scale.yml down
 - **Secrets** → Use `docker secrets` instead of `.env` for sensitive data.  
 - **Production-ready NGINX** → Traefic
 - **Scaling beyond Compose** → Use Docker Swarm or Kubernetes for production.  
-2025-08-23T15:32:40.025Z  INFO 1 --- [nio-9000-exec-2] o.apache.coyote.http11.Http11Processor   : The host [app_servers] is not valid
-[emerg] invalid number of arguments in "upstream" directive in /etc/nginx/nginx.conf:4
-  
+
+  Erorrs i found on docker desktop :
+  1-  2025-08-23T15:32:40.025Z  INFO 1 --- [nio-9000-exec-2] o.apache.coyote.http11.Http11Processor   : The host [app_servers] is not valid
+  2-[emerg] invalid number of arguments in "upstream" directive in /etc/nginx/nginx.conf:4
 
 ---
