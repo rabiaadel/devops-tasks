@@ -1,0 +1,125 @@
+---
+- name: Deploy Spring PetClinic with its Dockerfile
+  hosts: vm
+  become: yes
+  vars:
+    local_app_dir: "/home/projects/spring-petclinic"
+    local_dockerfile: "/home/projects/Dockerfile.bepr"
+    remote_app_dir: "/opt/spring-petclinic"
+    mysql_root_password: "rootpassword"
+    mysql_user: "petclinic"
+    mysql_password: "petclinic"
+    mysql_database: "petclinic"
+    app_port: "9000"
+
+  tasks:
+    - name: Install Docker and Java
+      apt:
+        name:
+          - docker.io
+          - openjdk-21-jdk
+        state: present
+        update_cache: yes
+
+    - name: Start Docker service
+      command: sudo service docker start
+      args:
+        creates: /var/run/docker.sock
+
+    - name: create docker group
+      group:
+        name: docker
+        state: present
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      # REMOVED: check_mode: no  ← This was causing the error
+
+    - name: Create application directory
+      file:
+        path: "{{ remote_app_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy source code
+      copy:
+        src: "{{ local_app_dir }}/src"
+        dest: "{{ remote_app_dir }}/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Copy Maven files
+      copy:
+        src: "{{ local_app_dir }}/{{ item }}"
+        dest: "{{ remote_app_dir }}/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      loop:
+        - "pom.xml"
+        - "mvnw"
+        - ".mvn"
+
+    - name: Copy Dockerfile
+      copy:
+        src: "{{ local_dockerfile }}"
+        dest: "{{ remote_app_dir }}/Dockerfile"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Make mvnw executable
+      file:
+        path: "{{ remote_app_dir }}/mvnw"
+        mode: "0755"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Build application with Maven
+      command: ./mvnw clean package -DskipTests
+      args:
+        chdir: "{{ remote_app_dir }}"
+      environment:
+        MAVEN_OPTS: "-Dmaven.dependency.go-offline.skip=true"
+
+    - name: Build Docker image
+      docker_image:
+        name: spring-petclinic
+        build:
+          path: "{{ remote_app_dir }}"
+        source: build
+
+    - name: Run MySQL container
+      docker_container:
+        name: petclinic-mysql
+        image: mysql:9.2
+        state: started
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
+          MYSQL_DATABASE: "{{ mysql_database }}"
+          MYSQL_USER: "{{ mysql_user }}"
+          MYSQL_PASSWORD: "{{ mysql_password }}"
+        ports:
+          - "3306:3306"
+
+    - name: Run Spring PetClinic container
+      docker_container:
+        name: spring-petclinic-app
+        image: spring-petclinic
+        state: started
+        ports:
+          - "{{ app_port }}:9000"
+        env:
+          SPRING_PROFILES_ACTIVE: mysql
+          SPRING_DATASOURCE_URL: "jdbc:mysql://petclinic-mysql:3306/{{ mysql_database }}"
+          SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
+          SPRING_DATASOURCE_PASSWORD: "{{ mysql_password }}"
+
+    - name: Show deployment success
+      debug:
+        msg:
+          - "Deployment completed!"
+          - "Application: http://{{ inventory_hostname }}:{{ app_port }}"
+          - "Docker running: spring-petclinic-app"
+        #echo "rabia ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/rabia
