@@ -19,13 +19,13 @@ This guide documents all the steps to set up Ansible for managing your WSL and V
 **On WSL:**
 ```bash
 ip addr show or ifconfig
-# Look for 'inet' address ( 172.21.113.169)
+# Look for 'inet' address ( secret)
 ```
 
 **On VM:**
 ```bash
 ip addr show or ifconfig
-# Look for 'inet' address ( 192.168.1.228)
+# Look for 'inet' address ( secret)
 ```
 
 ### 🔧 Set VM Network Mode
@@ -48,15 +48,15 @@ ssh-keygen
 ### 📤 Copy Public Key to Targets
 ```bash
 # Copy to WSL itself
-ssh-copy-id -i ~/.ssh/id_ed25519.pub rabia@172.21.113.169
+ssh-copy-id -i ~/.ssh/id_ed25519.pub rabia@any
 
 # Copy to VM
-ssh-copy-id -i ~/.ssh/id_ed25519.pub rabia@192.168.1.228
+ssh-copy-id -i ~/.ssh/id_ed25519.pub rabia@any
 ```
 
 ### ✅ Test SSH Connection
 ```bash
-ssh rabia@192.168.1.228
+ssh rabia@any
 # Should connect without password prompt
 ```
 
@@ -67,10 +67,10 @@ ssh rabia@192.168.1.228
 Create a `hosts.ini` file:
 ```ini
 [wsl]
-172.21.113.169
+secret
 
 [vm]
-192.168.1.228
+secret
 
 [all:vars]
 ansible_ssh_private_key_file=~/.ssh/id_ed25519
@@ -98,11 +98,11 @@ ansible all -i hosts.ini -m ping
 
 **Expected Output:**
 ```json
-172.21.113.169 | SUCCESS => {
+any | SUCCESS => {
     "changed": false,
     "ping": "pong"
 }
-192.168.1.228 | SUCCESS => {
+any | SUCCESS => {
     "changed": false, 
     "ping": "pong"
 }
@@ -168,7 +168,7 @@ ansible all -i hosts.ini -m command -a "ufw status" --become
 
 ```bash
 # Test SSH connection
-ssh -v rabia@192.168.1.228
+ssh -v rabia@any
 
 # Check Ansible version
 ansible --version
